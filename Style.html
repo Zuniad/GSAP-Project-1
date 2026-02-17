@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="High-performance cinematic scroll experience using GSAP, Lenis, and Modern CSS.">
+    <title>Lumina | Cinematic Locomotive Experience</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+    <!-- GSAP & ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    
+    <!-- Lenis for Smooth Inertia Scroll (Awwwards Standard) -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+
+    <style>
+        /* -------------------------------------------------------------------------- */
+        /* 1. CORE VARIABLES & RESET                                                 */
+        /* -------------------------------------------------------------------------- */
+        :root {
+            --c-bg: #030303;
+            --c-surface: #0a0a0a;
+            --c-text-main: #e6e6e6;
+            --c-text-muted: #666;
+            --c-accent: #c0a062; /* Muted Gold */
+            
+            --f-display: 'Playfair Display', serif;
+            --f-body: 'Manrope', sans-serif;
+            
+            --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+            --ease-in-out-circ: cubic-bezier(0.785, 0.135, 0.15, 0.86);
+            
+            --gutter: clamp(1.5rem, 6vw, 5rem);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html.lenis {
+            height: auto;
+        }
+
+        .lenis.lenis-smooth {
+            scroll-behavior: auto;
+        }
+
+        .lenis.lenis-smooth [data-lenis-prevent] {
+            overscroll-behavior: contain;
+        }
+
+        .lenis.lenis-stopped {
+            overflow: hidden;
+        }
+
+        body {
+            background-color: var(--c-bg);
+            color: var(--c-text-main);
+            font-family: var(--f-body);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        img, video {
+            display: block;
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+        }
+
+        /* -------------------------------------------------------------------------- */
+        /* 2. TYPOGRAPHY & UTILITIES                                                 */
+        /* -------------------------------------------------------------------------- */
+        .container {
+            width: 100%;
+            padding: 0 var(--gutter);
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .h-hero {
+            font-family: var(--f-display);
+            font-size: clamp(4rem, 14vw, 12rem);
+            line-height: 0.9;
+            letter-spacing: -0.03em;
+            font-weight: 400;
+            color: #fff;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .h-section {
+            font-family: var(--f-display);
+            font-size: clamp(3rem, 8vw, 6rem);
+            line-height: 1;
+            margin-bottom: 4rem;
+        }
+
+        .p-lead {
+            font-size: clamp(1rem, 1.5vw, 1.25rem);
+            line-height: 1.6;
+            color: var(--c-text-muted);
+            max-width: 50ch;
+        }
+
+        .text-split-line {
+            overflow: hidden;
+            display: block;
+        }
+        
+        .char {
+            display: inline-block;
+            transform-origin: 50% 100%;
+        }
+
+        .whitespace-section {
+            padding: 15vh 0;
+        }
+
+        /* -------------------------------------------------------------------------- */
+        /* 3. UI COMPONENTS                                                          */
+        /* -------------------------------------------------------------------------- */
+        
+        /* Progress Bar */
+        .scroll-progress {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 3px;
+            background: rgba(255,255,255,0.05);
+            z-index: 1000;
+        }
+        
+        .scroll-progress__bar {
+            width: 0%;
+            height: 100%;
+            background: var(--c-accent);
+        }
+
+        /* Loader */
+        .loader {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .loader__text {
+            font-family: var(--f-display);
+            font-size: 2rem;
+            color: var(--c-accent);
+            overflow: hidden;
+        }
+
+        /* Nav */
+        .nav {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            padding: 2rem var(--gutter);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 100;
+            mix-blend-mode: exclusion;
+            pointer-events: none; /* Let clicks pass through empty space */
+        }
+        .nav > * { pointer-events: auto; }
+
+        .logo { font-family: var(--f-display); font-size: 1.5rem; font-weight: 600; }
+        .menu-btn { cursor: pointer; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.1em; }
+
+        /* -------------------------------------------------------------------------- */
+        /* 4. ANIMATION CLASSES (Clip & Mask)                                        */
+        /* -------------------------------------------------------------------------- */
+        
+        /* The container for clip animations */
+        .clip-wrapper {
+            position: relative;
+            overflow: hidden;
+            /* Initial state handled by JS or default CSS if JS fails */
+        }
+        
+        .clip-wrapper img, .clip-wrapper video {
+            transform: scale(1.3); /* Parallax setup */
+        }
+
+        /* Image-to-Video Transition Styles */
+        .media-morph {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            overflow: hidden;
+        }
+
+        .media-morph img {
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 2;
+            transition: opacity 0.5s ease;
+        }
+
+        .media-morph video {
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 1;
+            opacity: 0;
+        }
+        
+        /* -------------------------------------------------------------------------- */
+        /* 5. SECTIONS                                                               */
+        /* -------------------------------------------------------------------------- */
+        
+        /* HERO */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-top: 10vh;
+        }
+
+        .hero-media {
+            position: absolute;
+            top: 0; right: 0;
+            width: 50vw;
+            height: 100vh;
+            z-index: 0;
+            opacity: 0.4;
+            clip-path: polygon(20% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+
+        /* LOCOMOTIVE SHOWCASE */
+        .loco-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15vh;
+        }
+
+        .loco-item {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: var(--gutter);
+            align-items: center;
+        }
+
+        .loco-item:nth-child(even) { direction: rtl; }
+        .loco-item:nth-child(even) .loco-content { direction: ltr; }
+
+        .loco-media {
+            grid-column: span 8;
+            height: 70vh;
+            width: 100%;
+        }
+
+        .loco-content {
+            grid-column: span 4;
+            padding: 2rem;
+        }
+
+        .loco-number {
+            font-family: var(--f-display);
+            font-size: 5rem;
+            color: var(--c-accent);
+            opacity: 0.5;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        /* FULL BLEED */
+        .section-full {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .section-full__video {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover;
+            filter: brightness(0.6);
+        }
+
+        .text-overlay {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            mix-blend-mode: overlay;
+        }
+
+        /* MOBILE */
+        @media (max-width: 768px) {
+            .hero-media { width: 100%; opacity: 0.2; clip-path: none; }
+            .loco-item, .loco-item:nth-child(even) { display: flex; flex-direction: column-reverse; direction: ltr; }
+            .loco-media { width: 100%; height: 50vh; }
+            .h-hero { font-size: 18vw; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- UI LAYERS -->
+    <div class="scroll-progress"><div class="scroll-progress__bar"></div></div>
+    
+    <div class="loader">
+        <div class="loader__text">LUMINA</div>
+    </div>
+
+    <nav class="nav">
+        <div class="logo">Lumina.</div>
+        <div class="menu-btn">Menu</div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="app">
+        
+        <!-- HERO -->
+        <section class="hero container">
+            <h1 class="h-hero">
+                <div class="split-target">Engineering</div>
+                <div class="split-target"><em>Motion</em></div>
+            </h1>
+            <p class="p-lead split-lines">
+                A tribute to the iron giants that conquered continents. <br>
+                Experience the raw power of steam and steel.
+            </p>
+            
+            <div class="hero-media clip-wrapper">
+                <!-- Smoky abstract video -->
+                <video autoplay muted loop playsinline poster="https://images.unsplash.com/photo-1474487548417-781cb71495f3?q=80&w=1000&auto=format&fit=crop">
+                    <source src="https://player.vimeo.com/external/538560067.sd.mp4?s=12e7244510b65f019f7129759d57a2418049e751&profile_id=165" type="video/mp4">
+                </video>
+            </div>
+        </section>
+
+        <!-- LOCOMOTIVE SHOWCASE -->
+        <section class="whitespace-section container">
+            <div class="loco-grid">
+                
+                <!-- ITEM 1: Classic Steam (Image to Video Morph) -->
+                <article class="loco-item">
+                    <div class="loco-media clip-wrapper" data-morph>
+                        <div class="media-morph">
+                            <img src="https://images.unsplash.com/photo-1596728328220-3796d42d3c33?q=80&w=2540&auto=format&fit=crop" alt="Steam Engine Smoke">
+                            <video loop muted playsinline>
+                                <source src="https://player.vimeo.com/external/371842055.sd.mp4?s=e7c6b9070868a8585473727402660098be2939e6&profile_id=164" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+                    <div class="loco-content">
+                        <span class="loco-number split-target">01</span>
+                        <h2 class="h-section split-target">The Iron Horse</h2>
+                        <p class="p-lead split-lines">Born from fire and water, the steam locomotive defined an era of industrial expansion. Feel the rhythm of the rails.</p>
+                    </div>
+                </article>
+
+                <!-- ITEM 2: Modern Transit (Clip Reveal) -->
+                <article class="loco-item">
+                    <div class="loco-media clip-wrapper reveal-from-bottom">
+                        <img src="https://images.unsplash.com/photo-1495570689269-d8836259410a?q=80&w=2670&auto=format&fit=crop" alt="Modern Metro Station">
+                    </div>
+                    <div class="loco-content">
+                        <span class="loco-number split-target">02</span>
+                        <h2 class="h-section split-target">Silent Velocity</h2>
+                        <p class="p-lead split-lines">Cutting through the urban jungle with precision. Modern transit is a symphony of light, speed, and efficiency.</p>
+                    </div>
+                </article>
+
+                <!-- ITEM 3: Scenic Route (Mask) -->
+                <article class="loco-item">
+                    <div class="loco-media clip-wrapper reveal-mask">
+                        <img src="https://images.unsplash.com/photo-1565355604922-38601614e667?q=80&w=2574&auto=format&fit=crop" alt="Train in Snow">
+                    </div>
+                    <div class="loco-content">
+                        <span class="loco-number split-target">03</span>
+                        <h2 class="h-section split-target">Winter Passage</h2>
+                        <p class="p-lead split-lines">Navigating the frozen frontiers. The contrast of black steel against white snow creates a visual poetry unlike any other.</p>
+                    </div>
+                </article>
+
+            </div>
+        </section>
+
+        <!-- FULLSCREEN VIDEO -->
+        <section class="section-full" data-pin-section>
+            <video class="section-full__video" autoplay muted loop playsinline>
+                <source src="https://player.vimeo.com/external/482618640.sd.mp4?s=a711200632298c471415053b879326e73f886f4a&profile_id=165" type="video/mp4">
+            </video>
+            <div class="text-overlay">
+                <h2 class="h-hero split-target">Unstoppable</h2>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="container whitespace-section" style="text-align: center;">
+            <h2 class="h-section split-target">Next Destination</h2>
+            <a href="#" style="color: var(--c-accent); text-decoration: none; font-size: 1.5rem; border-bottom: 1px solid currentColor;">Book Your Journey</a>
+        </footer>
+
+    </main>
+
+    <script>
+        /**
+         * --------------------------------------------------------------------------
+         * UTILS: TEXT SPLITTER
+         * Simulates SplitText functionality for vanilla JS
+         * --------------------------------------------------------------------------
+         */
+        const splitText = (selector) => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+                const text = el.innerText;
+                el.innerHTML = '';
+                
+                // Wrap letters
+                const chars = text.split('').map(char => {
+                    return char === ' ' ? '&nbsp;' : `<span class="char">${char}</span>`;
+                }).join('');
+                
+                el.innerHTML = chars;
+            });
+        };
+
+        const wrapLines = (selector) => {
+            // Simple wrapper for block text - in a real app, use a robust library
+            // Here we just fade in the whole block, but advanced would allow line masking
+            document.querySelectorAll(selector).forEach(el => {
+                el.style.opacity = 0; // Prepare for GSAP
+            });
+        };
+
+        /**
+         * --------------------------------------------------------------------------
+         * APP CONTROLLER
+         * --------------------------------------------------------------------------
+         */
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            // 1. SETUP LENIS (SMOOTH SCROLL)
+            const lenis = new Lenis({
+                duration: 1.2,
+                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+                direction: 'vertical',
+                gestureDirection: 'vertical',
+                smooth: true,
+                mouseMultiplier: 1,
+                smoothTouch: false,
+                touchMultiplier: 2,
+            });
+
+            function raf(time) {
+                lenis.raf(time);
+                requestAnimationFrame(raf);
+            }
+            requestAnimationFrame(raf);
+
+            // Connect GSAP ScrollTrigger to Lenis
+            gsap.registerPlugin(ScrollTrigger);
+            
+            // 2. PREPARE DOM
+            splitText('.split-target');
+            wrapLines('.split-lines');
+
+            // 3. INTRO ANIMATION
+            const initLoader = () => {
+                const chars = document.querySelectorAll('.loader__text .char');
+                const tl = gsap.timeline();
+
+                tl.from(chars, {
+                    yPercent: 100,
+                    stagger: 0.05,
+                    opacity: 0,
+                    duration: 1,
+                    ease: "power3.out"
+                })
+                .to(chars, {
+                    yPercent: -100,
+                    stagger: 0.05,
+                    opacity: 0,
+                    duration: 0.8,
+                    delay: 0.5,
+                    ease: "power3.in"
+                })
+                .to('.loader', {
+                    clipPath: 'inset(0 0 100% 0)',
+                    duration: 1,
+                    ease: "expo.inOut"
+                });
+
+                return tl;
+            };
+
+            // 4. MAIN ANIMATIONS
+            const initApp = () => {
+                
+                // Scroll Progress
+                gsap.to('.scroll-progress__bar', {
+                    scaleX: 1,
+                    ease: 'none',
+                    transformOrigin: 'left',
+                    scrollTrigger: {
+                        trigger: 'body',
+                        start: 'top top',
+                        end: 'bottom bottom',
+                        scrub: 0
+                    }
+                });
+
+                // Hero Staggers
+                const heroChars = document.querySelectorAll('.hero .char');
+                gsap.from(heroChars, {
+                    yPercent: 120,
+                    rotationZ: 5,
+                    stagger: 0.02,
+                    duration: 1.5,
+                    ease: "power4.out",
+                    delay: 2.5 // Wait for loader
+                });
+
+                gsap.to('.hero-media', {
+                    scrollTrigger: {
+                        trigger: '.hero',
+                        start: 'top top',
+                        end: 'bottom top',
+                        scrub: true
+                    },
+                    yPercent: 20,
+                    scale: 1.1
+                });
+
+                // Section Title Reveals (ScrollTrigger)
+                document.querySelectorAll('.h-section').forEach(title => {
+                    gsap.from(title.querySelectorAll('.char'), {
+                        scrollTrigger: {
+                            trigger: title,
+                            start: 'top 85%',
+                        },
+                        yPercent: 100,
+                        opacity: 0,
+                        stagger: 0.03,
+                        duration: 1,
+                        ease: "power3.out"
+                    });
+                });
+
+                // Paragraph Fades
+                document.querySelectorAll('.p-lead').forEach(p => {
+                    gsap.to(p, {
+                        scrollTrigger: {
+                            trigger: p,
+                            start: 'top 90%',
+                        },
+                        opacity: 1,
+                        y: 0,
+                        duration: 1.5,
+                        ease: "power2.out"
+                    });
+                });
+
+                // ----------------------------------------------------
+                // ADVANCED CLIP PATH & MASK ANIMATIONS
+                // ----------------------------------------------------
+
+                // Type 1: Standard Parallax + Clip Reveal
+                document.querySelectorAll('.clip-wrapper:not(.reveal-from-bottom):not(.reveal-mask)').forEach(wrapper => {
+                    const img = wrapper.querySelector('img, video');
+                    
+                    // Set initial clip
+                    gsap.set(wrapper, { clipPath: 'inset(20% 0 20% 0)' });
+                    
+                    // Animate clip
+                    gsap.to(wrapper, {
+                        scrollTrigger: {
+                            trigger: wrapper,
+                            start: 'top 80%',
+                            end: 'bottom 20%',
+                            scrub: 1
+                        },
+                        clipPath: 'inset(0% 0 0% 0)',
+                        ease: 'none'
+                    });
+
+                    // Animate image scale (Parallax)
+                    gsap.fromTo(img, 
+                        { scale: 1.4 },
+                        {
+                            scrollTrigger: {
+                                trigger: wrapper,
+                                start: 'top 100%',
+                                end: 'bottom 0%',
+                                scrub: true
+                            },
+                            scale: 1,
+                            ease: 'none'
+                        }
+                    );
+                });
+
+                // Type 2: Reveal From Bottom (Wipe)
+                document.querySelectorAll('.reveal-from-bottom').forEach(wrapper => {
+                    const img = wrapper.querySelector('img');
+                    gsap.set(wrapper, { clipPath: 'polygon(0 100%, 100% 100%, 100% 100%, 0 100%)' });
+                    
+                    gsap.to(wrapper, {
+                        scrollTrigger: {
+                            trigger: wrapper,
+                            start: 'top 75%',
+                            end: 'bottom 75%',
+                            scrub: 1
+                        },
+                        clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)',
+                        ease: 'power2.inOut'
+                    });
+                    
+                    gsap.fromTo(img, { scale: 1.3, yPercent: 20 }, {
+                        scrollTrigger: {
+                            trigger: wrapper,
+                            start: 'top 100%',
+                            end: 'bottom 0%',
+                            scrub: true
+                        },
+                        scale: 1,
+                        yPercent: 0
+                    });
+                });
+
+                // Type 3: Image-to-Video Morph (Interaction)
+                const morphs = document.querySelectorAll('[data-morph]');
+                morphs.forEach(wrapper => {
+                    const vid = wrapper.querySelector('video');
+                    const img = wrapper.querySelector('img');
+                    
+                    wrapper.addEventListener('mouseenter', () => {
+                        vid.play();
+                        gsap.to(vid, { opacity: 1, duration: 0.5 });
+                        gsap.to(img, { opacity: 0, duration: 0.5 });
+                    });
+                    
+                    wrapper.addEventListener('mouseleave', () => {
+                        gsap.to(vid, { opacity: 0, duration: 0.5 });
+                        gsap.to(img, { opacity: 1, duration: 0.5, onComplete: () => vid.pause() });
+                    });
+                });
+
+                // Pinning Section
+                const pinSection = document.querySelector('[data-pin-section]');
+                const pinVideo = pinSection.querySelector('video');
+                
+                ScrollTrigger.create({
+                    trigger: pinSection,
+                    start: "top top",
+                    end: "+=100%",
+                    pin: true,
+                    scrub: true,
+                    onUpdate: (self) => {
+                        // Optional: Blur effect based on scroll
+                        const blur = (1 - self.progress) * 10;
+                        // pinVideo.style.filter = `brightness(${0.6 + self.progress * 0.4})`;
+                    }
+                });
+            };
+
+            // Master Timeline
+            const master = gsap.timeline();
+            master.add(initLoader())
+                  .add(initApp(), "-=0.5");
+
+        });
+    </script>
+</body>
+</html>

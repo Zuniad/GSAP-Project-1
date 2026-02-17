@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cinematic Portfolio — GSAP</title>
+
+  <!-- Preconnect for fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- ======================================================
+       STYLES — Internal CSS (production-ready, dark theme)
+       ====================================================== -->
+  <style>
+    /* ——————————————————————————————
+       0. RESET & BASE
+       —————————————————————————————— */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --clr-bg: #0a0a0a;
+      --clr-surface: #111111;
+      --clr-surface-alt: #1a1a1a;
+      --clr-text: #f0f0f0;
+      --clr-text-muted: #888888;
+      --clr-accent: #c9a96e;
+      --clr-accent-light: #e2c994;
+      --clr-glass: rgba(255, 255, 255, 0.04);
+      --clr-glass-border: rgba(255, 255, 255, 0.08);
+      --clr-glass-strong: rgba(255, 255, 255, 0.08);
+      --font-primary: 'Inter', sans-serif;
+      --font-display: 'Playfair Display', serif;
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --radius: 16px;
+      --radius-sm: 8px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--clr-bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    body {
+      font-family: var(--font-primary);
+      background: var(--clr-bg);
+      color: var(--clr-text);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    img, video {
+      display: block;
+      max-width: 100%;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* ——————————————————————————————
+       1. PAGE LOADER / REVEAL CURTAIN
+       —————————————————————————————— */
+    .page-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: var(--clr-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .loader-text {
+      font-family: var(--font-display);
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--clr-accent);
+      opacity: 0;
+    }
+
+    .loader-bar-track {
+      width: min(320px, 60vw);
+      height: 2px;
+      background: var(--clr-surface-alt);
+      border-radius: 2px;
+      overflow: hidden;
+      opacity: 0;
+    }
+
+    .loader-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--clr-accent);
+      border-radius: 2px;
+    }
+
+    /* ——————————————————————————————
+       2. NAVIGATION
+       —————————————————————————————— */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
+      padding: 20px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.4s ease, backdrop-filter 0.4s ease, padding 0.4s ease;
+    }
+
+    .nav.scrolled {
+      background: rgba(10, 10, 10, 0.7);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      padding: 14px 48px;
+      border-bottom: 1px solid var(--clr-glass-border);
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--clr-accent);
+      opacity: 0;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+    }
+
+    .nav-links li {
+      opacity: 0;
+    }
+
+    .nav-links a {
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--clr-text-muted);
+      position: relative;
+      transition: color 0.3s ease;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0%;
+      height: 1px;
+      background: var(--clr-accent);
+      transition: width 0.4s var(--ease-out-expo);
+    }
+
+    .nav-links a:hover {
+      color: var(--clr-text);
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    /* Mobile hamburger */
+    .nav-hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      z-index: 1001;
+      opacity: 0;
+    }
+
+    .nav-hamburger span {
+      width: 28px;
+      height: 2px;
+      background: var(--clr-text);
+      border-radius: 2px;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .nav-hamburger.active span:nth-child(1) {
+      transform: rotate(45deg) translate(5px, 5px);
+    }
+    .nav-hamburger.active span:nth-child(2) {
+      opacity: 0;
+    }
+    .nav-hamburger.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(5px, -5px);
+    }
+
+    /* ——————————————————————————————
+       3. HERO SECTION
+       —————————————————————————————— */
+    .hero {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      min-height: 600px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-video-wrap {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .hero-video-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(10, 10, 10, 0.4) 0%,
+        rgba(10, 10, 10, 0.6) 50%,
+        rgba(10, 10, 10, 0.95) 100%
+      );
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 900px;
+      padding: 0 24px;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--clr-accent);
+      margin-bottom: 24px;
+      opacity: 0;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 7vw, 6rem);
+      font-weight: 700;
+      line-height: 1.05;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .hero-title .line {
+      display: block;
+      overflow: hidden;
+    }
+
+    .hero-title .line-inner {
+      display: block;
+      transform: translateY(110%);
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      font-weight: 300;
+      color: var(--clr-text-muted);
+      max-width: 560px;
+      margin: 0 auto 40px;
+      opacity: 0;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 40px;
+      border: 1px solid var(--clr-accent);
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--clr-accent);
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.4s ease, color 0.4s ease;
+      opacity: 0;
+    }
+
+    .hero-cta:hover {
+      background: var(--clr-accent);
+      color: var(--clr-bg);
+    }
+
+    .hero-scroll-hint {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+    }
+
+    .hero-scroll-hint span {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--clr-text-muted);
+    }
+
+    .scroll-line {
+      width: 1px;
+      height: 48px;
+      background: linear-gradient(180deg, var(--clr-accent), transparent);
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes scrollPulse {
+      0%, 100% { transform: scaleY(1); opacity: 1; }
+      50% { transform: scaleY(0.5); opacity: 0.4; }
+    }
+
+    /* ——————————————————————————————
+       4. SECTION UTILITIES
+       —————————————————————————————— */
+    .section {
+      padding: 120px 48px;
+      position: relative;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--clr-accent);
+      margin-bottom: 16px;
+      opacity: 0;
+    }
+
+    .section-heading {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      opacity: 0;
+    }
+
+    .section-desc {
+      font-size: 1.05rem;
+      color: var(--clr-text-muted);
+      max-width: 540px;
+      font-weight: 300;
+      opacity: 0;
+    }
+
+    /* ——————————————————————————————
+       5. IMAGE GALLERY
+       —————————————————————————————— */
+    .gallery {
+      background: var(--clr-surface);
+    }
+
+    .gallery-header {
+      text-align: center;
+      margin-bottom: 72px;
+    }
+
+    .gallery-header .section-desc {
+      margin: 0 auto;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .gallery-item {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      aspect-ratio: 3 / 4;
+      opacity: 0;
+    }
+
+    .gallery-item:nth-child(1) { grid-row: span 2; aspect-ratio: auto; }
+    .gallery-item:nth-child(4) { grid-row: span 2; aspect-ratio: auto; }
+
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.7s var(--ease-out-expo), filter 0.7s ease;
+      will-change: transform;
+    }
+
+    .gallery-item:hover img {
+      transform: scale(1.08);
+      filter: brightness(1.1);
+    }
+
+    .gallery-item-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.6) 100%);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      display: flex;
+      align-items: flex-end;
+      padding: 24px;
+    }
+
+    .gallery-item:hover .gallery-item-overlay {
+      opacity: 1;
+    }
+
+    .gallery-item-overlay span {
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    /* ——————————————————————————————
+       6. CINEMATIC TRANSITION SECTION
+       —————————————————————————————— */
+    .cinematic {
+      position: relative;
+      height: 100vh;
+      min-height: 600px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cinematic-video-wrap {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      clip-path: inset(15% 15% 15% 15%);
+    }
+
+    .cinematic-video-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .cinematic-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 10, 0.35);
+      z-index: 1;
+    }
+
+    .cinematic-text {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 0 24px;
+    }
+
+    .cinematic-text h2 {
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 6vw, 5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      opacity: 0;
+    }
+
+    .cinematic-text h2 em {
+      color: var(--clr-accent);
+      font-style: italic;
+    }
+
+    .cinematic-text p {
+      margin-top: 20px;
+      font-size: 1.1rem;
+      color: var(--clr-text-muted);
+      font-weight: 300;
+      opacity: 0;
+    }
+
+    /* ——————————————————————————————
+       7. MIXED CONTENT LAYOUT
+       —————————————————————————————— */
+    .mixed {
+      background: var(--clr-bg);
+    }
+
+    .mixed-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+      align-items: center;
+    }
+
+    .mixed-media {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      opacity: 0;
+    }
+
+    .mixed-media video,
+    .mixed-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: var(--radius);
+    }
+
+    .mixed-media-badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      padding: 6px 14px;
+      background: var(--clr-glass-strong);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--clr-glass-border);
+      border-radius: 50px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--clr-text);
+    }
+
+    .mixed-content {
+      opacity: 0;
+    }
+
+    .mixed-content .section-label {
+      opacity: 1;
+    }
+
+    .mixed-content .section-heading {
+      opacity: 1;
+    }
+
+    .mixed-content .section-desc {
+      opacity: 1;
+      margin-bottom: 32px;
+    }
+
+    .mixed-row {
+      margin-top: 100px;
+    }
+
+    .mixed-row:first-child {
+      margin-top: 0;
+    }
+
+    .mixed-row.reverse .mixed-grid {
+      direction: rtl;
+    }
+
+    .mixed-row.reverse .mixed-grid > * {
+      direction: ltr;
+    }
+
+    /* Glass card */
+    .glass-card {
+      background: var(--clr-glass);
+      border: 1px solid var(--clr-glass-border);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: var(--radius);
+      padding: 40px;
+    }
+
+    .glass-card-stat {
+      display: flex;
+      gap: 40px;
+      margin-top: 24px;
+    }
+
+    .stat-item h4 {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--clr-accent);
+    }
+
+    .stat-item p {
+      font-size: 0.8rem;
+      color: var(--clr-text-muted);
+      margin-top: 4px;
+    }
+
+    /* ——————————————————————————————
+       8. SHOWCASE / FULL-WIDTH IMAGE STRIP
+       —————————————————————————————— */
+    .showcase {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .showcase-strip {
+      display: flex;
+      gap: 20px;
+      width: max-content;
+    }
+
+    .showcase-strip-item {
+      width: 400px;
+      height: 520px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .showcase-strip-item img,
+    .showcase-strip-item video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* ——————————————————————————————
+       9. FOOTER
+       —————————————————————————————— */
+    .footer {
+      padding: 80px 48px 40px;
+      border-top: 1px solid var(--clr-glass-border);
+      background: var(--clr-surface);
+    }
+
+    .footer-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 48px;
+    }
+
+    .footer-brand h3 {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--clr-accent);
+      margin-bottom: 16px;
+    }
+
+    .footer-brand p {
+      color: var(--clr-text-muted);
+      font-size: 0.9rem;
+      font-weight: 300;
+      line-height: 1.8;
+      max-width: 300px;
+    }
+
+    .footer-col h4 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--clr-text);
+      margin-bottom: 20px;
+    }
+
+    .footer-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .footer-col ul a {
+      font-size: 0.9rem;
+      color: var(--clr-text-muted);
+      transition: color 0.3s ease;
+    }
+
+    .footer-col ul a:hover {
+      color: var(--clr-accent);
+    }
+
+    .footer-bottom {
+      max-width: 1400px;
+      margin: 60px auto 0;
+      padding-top: 24px;
+      border-top: 1px solid var(--clr-glass-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-bottom p {
+      font-size: 0.8rem;
+      color: var(--clr-text-muted);
+    }
+
+    /* ——————————————————————————————
+       10. RESPONSIVE
+       —————————————————————————————— */
+    @media (max-width: 1024px) {
+      .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .gallery-item:nth-child(1),
+      .gallery-item:nth-child(4) {
+        grid-row: span 1;
+        aspect-ratio: 3 / 4;
+      }
+      .mixed-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+      .mixed-row.reverse .mixed-grid {
+        direction: ltr;
+      }
+      .footer-inner {
+        grid-template-columns: 1fr 1fr;
+      }
+      .showcase-strip-item {
+        width: 300px;
+        height: 400px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .section {
+        padding: 80px 24px;
+      }
+      .nav {
+        padding: 16px 24px;
+      }
+      .nav.scrolled {
+        padding: 12px 24px;
+      }
+      .nav-links {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 70%;
+        height: 100vh;
+        background: rgba(10, 10, 10, 0.95);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 32px;
+        transition: right 0.5s var(--ease-out-expo);
+        border-left: 1px solid var(--clr-glass-border);
+      }
+      .nav-links.open {
+        right: 0;
+      }
+      .nav-links li {
+        opacity: 1;
+      }
+      .nav-hamburger {
+        display: flex;
+        opacity: 1;
+      }
+      .gallery-grid {
+        grid-template-columns: 1fr;
+      }
+      .footer-inner {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+      .footer-bottom {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+      }
+      .glass-card-stat {
+        gap: 24px;
+      }
+      .showcase-strip-item {
+        width: 260px;
+        height: 340px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-cta {
+        padding: 14px 28px;
+        font-size: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- =============================================
+       PAGE LOADER / REVEAL CURTAIN
+       ============================================= -->
+  <div class="page-loader" id="pageLoader">
+    <div class="loader-text">Studio</div>
+    <div class="loader-bar-track">
+      <div class="loader-bar-fill"></div>
+    </div>
+  </div>
+
+  <!-- =============================================
+       NAVIGATION
+       ============================================= -->
+  <nav class="nav" id="mainNav">
+    <a href="#" class="nav-logo">Studio.</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#gallery">Gallery</a></li>
+      <li><a href="#cinematic">Cinematic</a></li>
+      <li><a href="#mixed">Work</a></li>
+      <li><a href="#showcase">Showcase</a></li>
+      <li><a href="#footer">Contact</a></li>
+    </ul>
+    <div class="nav-hamburger" id="navHamburger">
+      <span></span><span></span><span></span>
+    </div>
+  </nav>
+
+  <!-- =============================================
+       HERO SECTION
+       ============================================= -->
+  <section class="hero" id="hero">
+    <div class="hero-video-wrap">
+      <video autoplay muted loop playsinline preload="auto">
+        <source src="public/video2.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <div class="hero-overlay"></div>
+
+    <div class="hero-content">
+      <span class="hero-tag">Creative Studio — Est. 2024</span>
+      <h1 class="hero-title">
+        <span class="line"><span class="line-inner">Visual Stories</span></span>
+        <span class="line"><span class="line-inner">Crafted with <em style="color:var(--clr-accent);font-style:italic">Precision</em></span></span>
+      </h1>
+      <p class="hero-sub">
+        We blend cinematic motion, thoughtful design, and cutting-edge technology
+        to create unforgettable digital experiences.
+      </p>
+      <a href="#gallery" class="hero-cta">
+        Explore Work
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+
+    <div class="hero-scroll-hint">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- =============================================
+       IMAGE GALLERY
+       ============================================= -->
+  <section class="section gallery" id="gallery">
+    <div class="gallery-header">
+      <p class="section-label">Selected Works</p>
+      <h2 class="section-heading">Visual Gallery</h2>
+      <p class="section-desc">A curated collection of our finest visual work — each frame tells a story of craft and intention.</p>
+    </div>
+
+    <div class="gallery-grid">
+      <div class="gallery-item">
+        <img src="public/Image1.jpeg" alt="Gallery Image 1" loading="lazy" />
+        <div class="gallery-item-overlay"><span>Ethereal Light</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="public/image 2.jpeg" alt="Gallery Image 2" loading="lazy" />
+        <div class="gallery-item-overlay"><span>Motion Study</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="public/image3.jpeg" alt="Gallery Image 3" loading="lazy" />
+        <div class="gallery-item-overlay"><span>Dark Contrast</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="public/image4.jpeg" alt="Gallery Image 4" loading="lazy" />
+        <div class="gallery-item-overlay"><span>Golden Hour</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="public/image3.jpeg" alt="Gallery Image 5" loading="lazy" />
+        <div class="gallery-item-overlay"><span>Texture Play</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="public/Image1.jpeg" alt="Gallery Image 6" loading="lazy" />
+        <div class="gallery-item-overlay"><span>Quiet Moments</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================================
+       CINEMATIC FULL-SCREEN TRANSITION
+       ============================================= -->
+  <section class="cinematic" id="cinematic">
+    <div class="cinematic-video-wrap" id="cinematicVideoWrap">
+      <video autoplay muted loop playsinline preload="auto">
+        <source src="public/video3.mp4" type="video/mp4" />
+      </video>
+      <div class="cinematic-overlay"></div>
+    </div>
+    <div class="cinematic-text">
+      <h2>Where <em>Vision</em><br />Meets Motion</h2>
+      <p>Seamless transitions. Effortless storytelling. Every pixel considered.</p>
+    </div>
+  </section>
+
+  <!-- =============================================
+       MIXED CONTENT LAYOUT
+       ============================================= -->
+  <section class="section mixed" id="mixed">
+    <!-- Row 1: Video left / Text right -->
+    <div class="mixed-row">
+      <div class="mixed-grid">
+        <div class="mixed-media">
+          <video autoplay muted loop playsinline preload="metadata">
+            <source src="public/video4.mp4" type="video/mp4" />
+          </video>
+          <div class="mixed-media-badge">Video</div>
+        </div>
+        <div class="mixed-content">
+          <p class="section-label">Our Process</p>
+          <h2 class="section-heading">Designed for<br />Impact</h2>
+          <p class="section-desc">
+            Every project begins with a deep understanding of story and purpose.
+            We combine research, creative direction, and technical expertise to
+            deliver results that move audiences.
+          </p>
+          <div class="glass-card" style="margin-top:28px">
+            <div class="glass-card-stat">
+              <div class="stat-item">
+                <h4>150+</h4>
+                <p>Projects Delivered</p>
+              </div>
+              <div class="stat-item">
+                <h4>98%</h4>
+                <p>Client Satisfaction</p>
+              </div>
+              <div class="stat-item">
+                <h4>12</h4>
+                <p>Awards Won</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Text left / Image right (reversed) -->
+    <div class="mixed-row reverse">
+      <div class="mixed-grid">
+        <div class="mixed-media">
+          <img src="public/image 2.jpeg" alt="Mixed content image" loading="lazy" />
+          <div class="mixed-media-badge">Photo</div>
+        </div>
+        <div class="mixed-content">
+          <p class="section-label">Philosophy</p>
+          <h2 class="section-heading">Craft Over<br />Convention</h2>
+          <p class="section-desc">
+            We believe in pushing boundaries while respecting fundamentals.
+            Every detail — from typography to timing — is deliberate and
+            purposeful. Quality is never compromised.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============================================
+       HORIZONTAL SHOWCASE STRIP
+       ============================================= -->
+  <section class="section showcase" id="showcase" style="padding-top:120px;padding-bottom:120px">
+    <div style="text-align:center;margin-bottom:64px;padding:0 24px">
+      <p class="section-label">Showcase</p>
+      <h2 class="section-heading">The Reel</h2>
+    </div>
+    <div class="showcase-strip" id="showcaseStrip">
+      <div class="showcase-strip-item"><video autoplay muted loop playsinline><source src="public/video2.mp4" type="video/mp4" /></video></div>
+      <div class="showcase-strip-item"><img src="public/Image1.jpeg" alt="Showcase 1" loading="lazy" /></div>
+      <div class="showcase-strip-item"><video autoplay muted loop playsinline><source src="public/video3.mp4" type="video/mp4" /></video></div>
+      <div class="showcase-strip-item"><img src="public/image 2.jpeg" alt="Showcase 2" loading="lazy" /></div>
+      <div class="showcase-strip-item"><video autoplay muted loop playsinline><source src="public/video4.mp4" type="video/mp4" /></video></div>
+      <div class="showcase-strip-item"><img src="public/image3.jpeg" alt="Showcase 3" loading="lazy" /></div>
+      <div class="showcase-strip-item"><img src="public/image4.jpeg" alt="Showcase 4" loading="lazy" /></div>
+    </div>
+  </section>
+
+  <!-- =============================================
+       FOOTER
+       ============================================= -->
+  <footer class="footer" id="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <h3>Studio.</h3>
+        <p>We craft cinematic digital experiences that captivate audiences and elevate brands. Based everywhere, creating for everyone.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navigate</h4>
+        <ul>
+          <li><a href="#hero">Home</a></li>
+          <li><a href="#gallery">Gallery</a></li>
+          <li><a href="#cinematic">Cinematic</a></li>
+          <li><a href="#mixed">Work</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="#">Motion Design</a></li>
+          <li><a href="#">Visual Identity</a></li>
+          <li><a href="#">Film Production</a></li>
+          <li><a href="#">Web Experiences</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Connect</h4>
+        <ul>
+          <li><a href="#">Instagram</a></li>
+          <li><a href="#">Behance</a></li>
+          <li><a href="#">Vimeo</a></li>
+          <li><a href="#">LinkedIn</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Studio. All rights reserved.</p>
+      <p>Crafted with precision & GSAP</p>
+    </div>
+  </footer>
+
+  <!-- =============================================
+       GSAP + ScrollTrigger CDN
+       ============================================= -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <!-- =============================================
+       APPLICATION JAVASCRIPT
+       Module pattern with IIFE — zero global pollution
+       ============================================= -->
+  <script>
+  /**
+   * ============================================================
+   * CINEMATIC PORTFOLIO — GSAP Animation System
+   * ============================================================
+   * Architecture: IIFE Module Pattern
+   * Dependencies: GSAP 3.12+, ScrollTrigger
+   * Author: Studio
+   * ============================================================
+   */
+  ;(function () {
+    'use strict';
+
+    /* ——————————————————————————————
+       REGISTER PLUGINS
+       —————————————————————————————— */
+    gsap.registerPlugin(ScrollTrigger);
+
+    /* ——————————————————————————————
+       DOM CACHE MODULE
+       Centralised DOM selection to avoid repeated queries
+       —————————————————————————————— */
+    const DOM = {
+      loader: document.getElementById('pageLoader'),
+      loaderText: document.querySelector('.loader-text'),
+      loaderTrack: document.querySelector('.loader-bar-track'),
+      loaderFill: document.querySelector('.loader-bar-fill'),
+      nav: document.getElementById('mainNav'),
+      navLogo: document.querySelector('.nav-logo'),
+      navLinks: document.querySelectorAll('.nav-links li'),
+      navLinksContainer: document.getElementById('navLinks'),
+      hamburger: document.getElementById('navHamburger'),
+      heroTag: document.querySelector('.hero-tag'),
+      heroLineInners: document.querySelectorAll('.hero-title .line-inner'),
+      heroSub: document.querySelector('.hero-sub'),
+      heroCta: document.querySelector('.hero-cta'),
+      heroScroll: document.querySelector('.hero-scroll-hint'),
+      galleryLabels: document.querySelectorAll('#gallery .section-label'),
+      galleryHeadings: document.querySelectorAll('#gallery .section-heading'),
+      galleryDescs: document.querySelectorAll('#gallery .section-desc'),
+      galleryItems: document.querySelectorAll('.gallery-item'),
+      cinematicWrap: document.getElementById('cinematicVideoWrap'),
+      cinematicH2: document.querySelector('.cinematic-text h2'),
+      cinematicP: document.querySelector('.cinematic-text p'),
+      mixedRows: document.querySelectorAll('.mixed-row'),
+      showcaseLabels: document.querySelectorAll('#showcase .section-label'),
+      showcaseHeadings: document.querySelectorAll('#showcase .section-heading'),
+      showcaseStrip: document.getElementById('showcaseStrip'),
+      showcaseSection: document.getElementById('showcase'),
+      footer: document.getElementById('footer'),
+    };
+
+    /* ——————————————————————————————
+       UTILITY HELPERS
+       —————————————————————————————— */
+    const utils = {
+      /** Detect reduced-motion preference */
+      prefersReducedMotion: () =>
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+
+      /** Simple mobile check */
+      isMobile: () => window.innerWidth < 768,
+    };
+
+    /* ——————————————————————————————
+       PAGE LOADER MODULE
+       Handles the page reveal / intro animation
+       —————————————————————————————— */
+    const Loader = (() => {
+      function run() {
+        const tl = gsap.timeline({
+          onComplete: () => {
+            // Remove loader from DOM after animation
+            DOM.loader.style.display = 'none';
+            document.body.style.overflow = '';
+            // Kick off the rest of the animations
+            HeroAnimations.play();
+            NavAnimations.play();
+          },
+        });
+
+        // Prevent scroll during loading
+        document.body.style.overflow = 'hidden';
+
+        tl.to(DOM.loaderText, {
+          opacity: 1,
+          duration: 0.6,
+          ease: 'power2.out',
+        })
+          .to(DOM.loaderTrack, {
+            opacity: 1,
+            duration: 0.3,
+            ease: 'power2.out',
+          }, '-=0.2')
+          .to(DOM.loaderFill, {
+            width: '100%',
+            duration: 1.4,
+            ease: 'power4.inOut',
+          })
+          .to(DOM.loaderText, {
+            opacity: 0,
+            y: -20,
+            duration: 0.4,
+            ease: 'power3.in',
+          }, '-=0.3')
+          .to(DOM.loaderTrack, {
+            opacity: 0,
+            duration: 0.3,
+            ease: 'power3.in',
+          }, '<')
+          .to(DOM.loader, {
+            yPercent: -100,
+            duration: 1,
+            ease: 'expo.inOut',
+          }, '-=0.1');
+      }
+
+      return { run };
+    })();
+
+    /* ——————————————————————————————
+       NAV ANIMATIONS MODULE
+       —————————————————————————————— */
+    const NavAnimations = (() => {
+      let played = false;
+
+      function play() {
+        if (played) return;
+        played = true;
+
+        const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+
+        tl.to(DOM.navLogo, {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+        })
+          .to(
+            DOM.navLinks,
+            {
+              opacity: 1,
+              y: 0,
+              stagger: 0.08,
+              duration: 0.6,
+            },
+            '-=0.4'
+          );
+
+        // Set initial positions
+        gsap.set(DOM.navLogo, { y: -20 });
+        gsap.set(DOM.navLinks, { y: -15 });
+
+        tl.restart();
+      }
+
+      /** Scroll-based style change */
+      function initScrollBehavior() {
+        ScrollTrigger.create({
+          start: 'top -80',
+          onUpdate: (self) => {
+            if (self.direction === 1 && window.scrollY > 80) {
+              DOM.nav.classList.add('scrolled');
+            }
+            if (window.scrollY <= 80) {
+              DOM.nav.classList.remove('scrolled');
+            }
+          },
+        });
+      }
+
+      return { play, initScrollBehavior };
+    })();
+
+    /* ——————————————————————————————
+       HERO ANIMATIONS MODULE
+       —————————————————————————————— */
+    const HeroAnimations = (() => {
+      let played = false;
+
+      function play() {
+        if (played) return;
+        played = true;
+
+        const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+
+        tl.to(DOM.heroLineInners, {
+          y: 0,
+          stagger: 0.15,
+          duration: 1.4,
+        })
+          .to(
+            DOM.heroTag,
+            { opacity: 1, y: 0, duration: 0.8 },
+            '-=0.8'
+          )
+          .to(
+            DOM.heroSub,
+            { opacity: 1, y: 0, duration: 0.8 },
+            '-=0.5'
+          )
+          .to(
+            DOM.heroCta,
+            { opacity: 1, y: 0, duration: 0.8 },
+            '-=0.4'
+          )
+          .to(
+            DOM.heroScroll,
+            { opacity: 1, duration: 0.6 },
+            '-=0.2'
+          );
+
+        // Set initial positions
+        gsap.set(DOM.heroTag, { y: 30 });
+        gsap.set(DOM.heroSub, { y: 30 });
+        gsap.set(DOM.heroCta, { y: 30 });
+
+        tl.restart();
+      }
+
+      /** Parallax on hero video */
+      function initParallax() {
+        gsap.to('.hero-video-wrap video', {
+          yPercent: 20,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.hero',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: true,
+          },
+        });
+
+        // Fade out hero content on scroll
+        gsap.to('.hero-content', {
+          opacity: 0,
+          y: -60,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.hero',
+            start: '30% top',
+            end: 'bottom top',
+            scrub: true,
+          },
+        });
+      }
+
+      return { play, initParallax };
+    })();
+
+    /* ——————————————————————————————
+       GALLERY ANIMATIONS MODULE
+       —————————————————————————————— */
+    const GalleryAnimations = (() => {
+      function init() {
+        // Section header reveal
+        const headerTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: '#gallery .gallery-header',
+            start: 'top 80%',
+            end: 'top 50%',
+            toggleActions: 'play none none reverse',
+          },
+        });
+
+        headerTl
+          .to(DOM.galleryLabels, {
+            opacity: 1,
+            y: 0,
+            duration: 0.6,
+            ease: 'power3.out',
+          })
+          .to(
+            DOM.galleryHeadings,
+            { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
+            '-=0.3'
+          )
+          .to(
+            DOM.galleryDescs,
+            { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
+            '-=0.3'
+          );
+
+        gsap.set([DOM.galleryLabels, DOM.galleryHeadings, DOM.galleryDescs], {
+          y: 40,
+        });
+
+        // Gallery items stagger reveal
+        gsap.set(DOM.galleryItems, { y: 80, scale: 0.95 });
+
+        DOM.galleryItems.forEach((item, i) => {
+          gsap.to(item, {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 1,
+            ease: 'power4.out',
+            scrollTrigger: {
+              trigger: item,
+              start: 'top 85%',
+              toggleActions: 'play none none reverse',
+            },
+            delay: (i % 3) * 0.1, // subtle stagger per row
+          });
+        });
+      }
+
+      return { init };
+    })();
+
+    /* ——————————————————————————————
+       CINEMATIC SECTION MODULE
+       Full-screen video reveal with clip-path animation
+       —————————————————————————————— */
+    const CinematicAnimations = (() => {
+      function init() {
+        // Clip-path expand animation
+        gsap.to(DOM.cinematicWrap, {
+          clipPath: 'inset(0% 0% 0% 0%)',
+          ease: 'power3.inOut',
+          scrollTrigger: {
+            trigger: '.cinematic',
+            start: 'top 60%',
+            end: 'top 10%',
+            scrub: 1,
+          },
+        });
+
+        // Text reveal
+        const textTl = gsap.timeline({
+          scrollTrigger: {
+            trigger: '.cinematic',
+            start: 'top 40%',
+            toggleActions: 'play none none reverse',
+          },
+        });
+
+        gsap.set(DOM.cinematicH2, { y: 60 });
+        gsap.set(DOM.cinematicP, { y: 40 });
+
+        textTl
+          .to(DOM.cinematicH2, {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            ease: 'power4.out',
+          })
+          .to(
+            DOM.cinematicP,
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.8,
+              ease: 'power4.out',
+            },
+            '-=0.4'
+          );
+
+        // Parallax on cinematic video
+        gsap.to('.cinematic-video-wrap video', {
+          yPercent: 10,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: '.cinematic',
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true,
+          },
+        });
+      }
+
+      return { init };
+    })();
+
+    /* ——————————————————————————————
+       MIXED CONTENT ANIMATIONS MODULE
+       —————————————————————————————— */
+    const MixedAnimations = (() => {
+      function init() {
+        DOM.mixedRows.forEach((row) => {
+          const media = row.querySelector('.mixed-media');
+          const content = row.querySelector('.mixed-content');
+
+          if (!media || !content) return;
+
+          gsap.set(media, { x: -60, opacity: 0 });
+          gsap.set(content, { x: 60, opacity: 0 });
+
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: row,
+              start: 'top 70%',
+              toggleActions: 'play none none reverse',
+            },
+          });
+
+          tl.to(media, {
+            x: 0,
+            opacity: 1,
+            duration: 1.2,
+            ease: 'power4.out',
+          }).to(
+            content,
+            {
+              x: 0,
+              opacity: 1,
+              duration: 1.2,
+              ease: 'power4.out',
+            },
+            '-=0.8'
+          );
+
+          // Parallax on media element
+          gsap.to(media, {
+            yPercent: -8,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: row,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: true,
+            },
+          });
+        });
+      }
+
+      return { init };
+    })();
+
+    /* ——————————————————————————————
+       SHOWCASE HORIZONTAL SCROLL MODULE
+       —————————————————————————————— */
+    const ShowcaseAnimations = (() => {
+      function init() {
+        // Header reveal
+        gsap.set(DOM.showcaseLabels, { y: 30, opacity: 0 });
+        gsap.set(DOM.showcaseHeadings, { y: 30, opacity: 0 });
+
+        gsap.to([DOM.showcaseLabels, DOM.showcaseHeadings], {
+          y: 0,
+          opacity: 1,
+          stagger: 0.15,
+          duration: 0.8,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: DOM.showcaseSection,
+            start: 'top 75%',
+            toggleActions: 'play none none reverse',
+          },
+        });
+
+        // Horizontal scroll
+        const strip = DOM.showcaseStrip;
+        if (!strip) return;
+
+        const totalScroll = strip.scrollWidth - window.innerWidth;
+
+        gsap.to(strip, {
+          x: -totalScroll,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: DOM.showcaseSection,
+            start: 'top top',
+            end: () => `+=${totalScroll}`,
+            scrub: 1,
+            pin: true,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+          },
+        });
+      }
+
+      return { init };
+    })();
+
+    /* ——————————————————————————————
+       FOOTER ANIMATIONS MODULE
+       —————————————————————————————— */
+    const FooterAnimations = (() => {
+      function init() {
+        const items = DOM.footer.querySelectorAll(
+          '.footer-brand, .footer-col, .footer-bottom'
+        );
+
+        gsap.set(items, { y: 40, opacity: 0 });
+
+        gsap.to(items, {
+          y: 0,
+          opacity: 1,
+          stagger: 0.1,
+          duration: 0.8,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: DOM.footer,
+            start: 'top 85%',
+            toggleActions: 'play none none reverse',
+          },
+        });
+      }
+
+      return { init };
+    })();
+
+    /* ——————————————————————————————
+       EVENTS MODULE
+       Centralised event handling
+       —————————————————————————————— */
+    const Events = (() => {
+      function init() {
+        // Mobile hamburger toggle
+        DOM.hamburger.addEventListener('click', () => {
+          DOM.hamburger.classList.toggle('active');
+          DOM.navLinksContainer.classList.toggle('open');
+        });
+
+        // Close mobile nav on link click
+        DOM.navLinksContainer.querySelectorAll('a').forEach((link) => {
+          link.addEventListener('click', () => {
+            DOM.hamburger.classList.remove('active');
+            DOM.navLinksContainer.classList.remove('open');
+          });
+        });
+
+        // Refresh ScrollTrigger on resize (debounced)
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+            ScrollTrigger.refresh();
+          }, 250);
+        });
+      }
+
+      return { init };
+    })();
+
+    /* ——————————————————————————————
+       INIT — Bootstrap the entire application
+       —————————————————————————————— */
+    function init() {
+      // Bail out gracefully if user prefers reduced motion
+      if (utils.prefersReducedMotion()) {
+        DOM.loader.style.display = 'none';
+        document.querySelectorAll('[style*="opacity:0"], .gallery-item, .mixed-media, .mixed-content')
+          .forEach((el) => {
+            el.style.opacity = '1';
+            el.style.transform = 'none';
+          });
+        // Still init events
+        Events.init();
+        NavAnimations.initScrollBehavior();
+        return;
+      }
+
+      // Default GSAP settings for hardware acceleration
+      gsap.defaults({
+        force3D: true,
+      });
+
+      // Run loader first — everything else triggers after it completes
+      Loader.run();
+
+      // Scroll-triggered modules
+      NavAnimations.initScrollBehavior();
+      HeroAnimations.initParallax();
+      GalleryAnimations.init();
+      CinematicAnimations.init();
+      MixedAnimations.init();
+      ShowcaseAnimations.init();
+      FooterAnimations.init();
+
+      // Events
+      Events.init();
+    }
+
+    /* ——————————————————————————————
+       DOM READY — Kick off
+       —————————————————————————————— */
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+  </script>
+</body>
+</html>
